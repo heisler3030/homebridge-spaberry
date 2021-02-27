@@ -1,6 +1,7 @@
 "use strict";
+let Service, Characteristic
+const fetch = require('node-fetch')
 
-let Service, Characteristic;
 
 module.exports = function (homebridge) {
     Service = homebridge.hap.Service;
@@ -14,27 +15,14 @@ function spacontrol(log, config, api) {
     this.config = config;
     this.homebridge = api;
     this.url = this.config.url;
-
-    // this.heater = new Service.Thermostat(this.config.name);
-    // this.heater.getCharacteristic(Characteristic.CurrentHeatingCoolingState)
-    // .on("get", this.getMode.bind(this))
-    // .on("set", this.getMode.bind(this));
-    // this.heater.getCharacteristic(Characteristic.TargetHeatingCoolingState)
-    // .on("get", this.getMode.bind(this))
-    // .on("set", this.getMode.bind(this));
-    // this.heater.getCharacteristic(Characteristic.CurrentTemperature)
-    // .on("get", this.getMode.bind(this))
-    // .on("set", this.getMode.bind(this));
-    // this.heater.getCharacteristic(Characteristic.TargetTemperature)
-    // .on("get", this.getMode.bind(this))
-    // .on("set", this.getMode.bind(this));
-    // this.heater.setCharacteristic(Characteristic.TemperatureDisplayUnits, Characteristic.TemperatureDisplayUnits.FAHRENHEIT);
-    //this.pump = new Service.Switch(this.config.name);
-
 }
 
 function _toCelsius(f) {
-    return (f - 32) * (5/9)
+    return Math.round((f - 32) * (5/9))
+}
+
+function _toFahrenheit(c) {
+    return Math.round((c * 9/5) + 32)
 }
 
 spacontrol.prototype = {
@@ -70,40 +58,48 @@ spacontrol.prototype = {
 
         setInterval(function () {
             this._getSpaStatus(function () {})
-        }.bind(this), 5000)
+        }.bind(this), this.config.pollInterval * 1000)
 
         return [this.infoService, this.heater];
     },
 
     _getSpaStatus: function(callback) {
         this.log("Getting Status from Spa...")
-        // Get JSON from API
-        let status = {"display":"101F","setHeat":1,"mode":1,"heating":1,"blower":0,"pump":1,"jets":0,"light":0,"temperature":94,"setTemp":101}
-        // Update the relevant characteristics
-        this.heater.getCharacteristic(Characteristic.CurrentTemperature).updateValue(_toCelsius(status.temperature))
-        this.heater.getCharacteristic(Characteristic.TargetTemperature).updateValue(_toCelsius(status.setTemp))
-        this.heater.getCharacteristic(Characteristic.CurrentHeatingCoolingState).updateValue(status.heating)
-        this.heater.getCharacteristic(Characteristic.TargetHeatingCoolingState).updateValue(status.heating)
-        callback()
+        let status
+        fetch(`${this.config.url}/json`)
+        .then(res => res.json())
+        .then(json => {
+            console.log(json)
+            status = json
+            //let status = {"display":"101F","setHeat":1,"mode":1,"heating":1,"blower":0,"pump":1,"jets":0,"light":0,"temperature":94,"setTemp":101}
+            // Update the relevant characteristics
+            this.heater.getCharacteristic(Characteristic.CurrentTemperature).updateValue(_toCelsius(status.temperature))
+            this.heater.getCharacteristic(Characteristic.TargetTemperature).updateValue(_toCelsius(status.setTemp))
+            this.heater.getCharacteristic(Characteristic.CurrentHeatingCoolingState).updateValue(status.mode)  // 1 = HEAT, 0 = OFF
+            this.heater.getCharacteristic(Characteristic.TargetHeatingCoolingState).updateValue(status.mode)
+            callback()
+        })
     },
 
-    getMode: function(callback) {
-        this.log('getMode');
-        callback(null);
-    },
+    // setTargetHeatingCoolingState: function (value, callback) {
+    //     this.log("setTargetHeatingCoolingState")
+    //     fetch(`${this.config.url}/mode`)
+    //     .then(res => this._getSpaStatus(callback))
+    // },
 
     setTargetHeatingCoolingState: function (value, callback) {
-        this.log("setTargetHeatingCoolingState")  
-        callback()
-    },
-    
-    setTargetTemperature: function (value, callback) {
-        this.log("setTargetTemperature")  
-        callback()
-    },
+        this.log("setTargetHeatingCoolingState")
+        fetch(`${this.config.url}/mode`)
+        .then(res => {
+            callback()
+            this._getSpaStatus(function () {})
+        })
+    },    
 
-    _toCelsius: function(f) {
-        return (f - 32) * (5/9)
+    setTargetTemperature: function (value, callback) {
+        this.log(`setTargetTemperature: ${value}`)
+        fetch(`${this.config.url}/change?temp=${_toFahrenheit(value)}`)
+        .then(res => this._getSpaStatus(callback))
     }
 
 }

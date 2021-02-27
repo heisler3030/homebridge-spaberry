@@ -1,13 +1,15 @@
 {
-    "name": "homebridge-spaberry",
-    "version": "0.0.1",
-    "description": "Homebridge interface for SpaBerry control",
-    "keywords": [
-      "homebridge-plugin"
-    ],
-    "engines": {
-      "node": ">=14.15.5",
-      "homebridge": ">=1.3.1"
-    },
-    "dependencies": {}
+  "name": "homebridge-spaberry",
+  "version": "0.0.1",
+  "description": "Homebridge interface for SpaBerry control",
+  "keywords": [
+    "homebridge-plugin"
+  ],
+  "engines": {
+    "node": ">=14.15.5",
+    "homebridge": ">=1.3.1"
+  },
+  "dependencies": {
+    "node-fetch": "^2.6.1"
   }
+}
