@@ -1,0 +1,33 @@
+{
+    "pluginAlias": "SpaBerry Spa Control for HomeBridge",
+    "pluginType": "accessory",
+    "singular": true,
+    "schema": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "title": "Name",
+          "type": "string",
+          "required": true,
+          "default": "Hot Tub",
+          "description": "Name of the Spa in Home App"
+        },
+        "url": {
+            "title": "URL",
+            "type": "string",
+            "required": true,
+            "placeholder": "http://192.168.86.41:3000",
+            "description": "Base path to SpaBerry API",
+            "format": "uri"
+
+        },
+        "pollInterval": {
+            "title": "Poll Interval",
+            "type": "number",
+            "required": true,
+            "default": "15",
+            "description": "Refresh interval in seconds"
+        }
+      }
+    }
+  }

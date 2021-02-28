@@ -18,7 +18,7 @@ function spacontrol(log, config, api) {
 }
 
 function _toCelsius(f) {
-    return Math.round((f - 32) * (5/9))
+    return (f - 32) * (5/9)
 }
 
 function _toFahrenheit(c) {
@@ -65,12 +65,11 @@ spacontrol.prototype = {
 
     _getSpaStatus: function(callback) {
         this.log("Getting Status from Spa...")
-        let status
         fetch(`${this.config.url}/json`)
         .then(res => res.json())
-        .then(json => {
-            console.log(json)
-            status = json
+        .then(status => {
+            console.log(status)
+            //status = json
             //let status = {"display":"101F","setHeat":1,"mode":1,"heating":1,"blower":0,"pump":1,"jets":0,"light":0,"temperature":94,"setTemp":101}
             // Update the relevant characteristics
             this.heater.getCharacteristic(Characteristic.CurrentTemperature).updateValue(_toCelsius(status.temperature))
@@ -91,7 +90,9 @@ spacontrol.prototype = {
         this.log("setTargetHeatingCoolingState")
         fetch(`${this.config.url}/mode`)
         .then(res => {
-            callback()
+            this.heater.getCharacteristic(Characteristic.TargetHeatingCoolingState).updateValue(value)
+            this.heater.getCharacteristic(Characteristic.CurrentHeatingCoolingState).updateValue(value)
+            callback(null)
             this._getSpaStatus(function () {})
         })
     },    
@@ -99,7 +100,11 @@ spacontrol.prototype = {
     setTargetTemperature: function (value, callback) {
         this.log(`setTargetTemperature: ${value}`)
         fetch(`${this.config.url}/change?temp=${_toFahrenheit(value)}`)
-        .then(res => this._getSpaStatus(callback))
+        .then(res => {
+            this.heater.getCharacteristic(Characteristic.TargetTemperature).updateValue(value)
+            callback(null)
+            this._getSpaStatus(function () {})
+        })
     }
 
 }

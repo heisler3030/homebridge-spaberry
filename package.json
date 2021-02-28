@@ -2,6 +2,11 @@
   "name": "homebridge-spaberry",
   "version": "0.0.1",
   "description": "Homebridge interface for SpaBerry control",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:heisler3030/homebridge-spaberry.git"
+  },
   "keywords": [
     "homebridge-plugin"
   ],
