@@ -1,5 +1,5 @@
 {
-    "pluginAlias": "SpaBerry Spa Control for HomeBridge",
+    "pluginAlias": "Hot Tub",
     "pluginType": "accessory",
     "singular": true,
     "schema": {
