@@ -1,5 +1,5 @@
 {
-    "pluginAlias": "Hot Tub",
+    "pluginAlias": "spaberry",
     "pluginType": "accessory",
     "singular": true,
     "schema": {
@@ -27,6 +27,11 @@
             "required": true,
             "default": "15",
             "description": "Refresh interval in seconds"
+        },
+        "debug": {
+          "title": "Debug mode?",
+          "description": "Enable debug logging",
+          "type": "boolean"
         }
       }
     }

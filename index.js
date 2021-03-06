@@ -7,7 +7,7 @@ module.exports = function (homebridge) {
     Service = homebridge.hap.Service;
     Characteristic = homebridge.hap.Characteristic;
     homebridge.registerAccessory('homebridge-spaberry',
-        'Hot Tub', spacontrol);
+        'spaberry', spacontrol);
 };
 
 function spacontrol(log, config, api) {
@@ -15,6 +15,7 @@ function spacontrol(log, config, api) {
     this.config = config;
     this.homebridge = api;
     this.url = this.config.url;
+    this.debug = this.config.debug;
 }
 
 function _toCelsius(f) {
@@ -27,10 +28,10 @@ function _toFahrenheit(c) {
 
 spacontrol.prototype = {
     getServices: function() {
-        this.log("spacontrol.getServices");
+        if (this.debug) this.log("spacontrol.getServices")
         //if (!this.heater) return [];
 
-        this.infoService = new Service.AccessoryInformation();
+        this.infoService = new Service.AccessoryInformation()
         this.infoService
             .setCharacteristic(Characteristic.Manufacturer, 'SuperFly, Inc.')
             .setCharacteristic(Characteristic. Model, 'Balboa 9800CP')
@@ -64,11 +65,11 @@ spacontrol.prototype = {
     },
 
     _getSpaStatus: function(callback) {
-        this.log("Getting Status from Spa...")
+        if (this.debug) this.log("Getting Status from Spa...")
         fetch(`${this.config.url}/json`)
         .then(res => res.json())
         .then(status => {
-            console.log(status)
+            if (this.debug) console.log(status)
             //status = json
             //let status = {"display":"101F","setHeat":1,"mode":1,"heating":1,"blower":0,"pump":1,"jets":0,"light":0,"temperature":94,"setTemp":101}
             // Update the relevant characteristics
@@ -80,17 +81,10 @@ spacontrol.prototype = {
         })
     },
 
-    // setTargetHeatingCoolingState: function (value, callback) {
-    //     this.log("setTargetHeatingCoolingState")
-    //     fetch(`${this.config.url}/mode`)
-    //     .then(res => this._getSpaStatus(callback))
-    // },
-
     setTargetHeatingCoolingState: function (value, callback) {
-        this.log("setTargetHeatingCoolingState")
+        this.heater.getCharacteristic(Characteristic.TargetHeatingCoolingState).updateValue(value)
         fetch(`${this.config.url}/mode`)
         .then(res => {
-            this.heater.getCharacteristic(Characteristic.TargetHeatingCoolingState).updateValue(value)
             this.heater.getCharacteristic(Characteristic.CurrentHeatingCoolingState).updateValue(value)
             callback(null)
             this._getSpaStatus(function () {})
@@ -98,7 +92,7 @@ spacontrol.prototype = {
     },    
 
     setTargetTemperature: function (value, callback) {
-        this.log(`setTargetTemperature: ${value}`)
+        if (this.debug) this.log(`setTargetTemperature: ${value}`)
         fetch(`${this.config.url}/change?temp=${_toFahrenheit(value)}`)
         .then(res => {
             this.heater.getCharacteristic(Characteristic.TargetTemperature).updateValue(value)
