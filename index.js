@@ -69,7 +69,7 @@ spacontrol.prototype = {
         fetch(`${this.config.url}/json`)
         .then(res => res.json())
         .then(status => {
-            if (this.debug) console.log(status)
+            if (this.debug) this.log(status)
             //status = json
             //let status = {"display":"101F","setHeat":1,"mode":1,"heating":1,"blower":0,"pump":1,"jets":0,"light":0,"temperature":94,"setTemp":101}
             // Update the relevant characteristics
@@ -79,9 +79,11 @@ spacontrol.prototype = {
             this.heater.getCharacteristic(Characteristic.TargetHeatingCoolingState).updateValue(status.mode)
             callback()
         })
+        .catch(e => this.log.error(`Error in _getSpaStatus: ${e}`))
     },
 
     setTargetHeatingCoolingState: function (value, callback) {
+        this.log.info(`Spa heat mode switched to ${value}`)
         this.heater.getCharacteristic(Characteristic.TargetHeatingCoolingState).updateValue(value)
         fetch(`${this.config.url}/mode`)
         .then(res => {
@@ -89,16 +91,20 @@ spacontrol.prototype = {
             callback(null)
             this._getSpaStatus(function () {})
         })
+        .catch(e => this.log.error(`Error in setTargetHeatingCoolingState: ${e}`))
     },    
 
     setTargetTemperature: function (value, callback) {
         if (this.debug) this.log(`setTargetTemperature: ${value}`)
-        fetch(`${this.config.url}/change?temp=${_toFahrenheit(value)}`)
+        let newTemp = _toFahrenheit(value)
+        this.log.info(`Adjusting target temp to ${newTemp}`)
+        fetch(`${this.config.url}/change?temp=${newTemp}`)
         .then(res => {
             this.heater.getCharacteristic(Characteristic.TargetTemperature).updateValue(value)
             callback(null)
             this._getSpaStatus(function () {})
         })
+        .catch(e => this.log.error(`Error in setTargetTemperature: ${e}`))
     }
 
 }
