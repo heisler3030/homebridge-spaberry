@@ -43,7 +43,8 @@ spacontrol.prototype = {
             .getCharacteristic(Characteristic.TargetHeatingCoolingState)
             .on('set', this.setTargetHeatingCoolingState.bind(this))
             .setProps({
-                maxValue: Characteristic.TargetHeatingCoolingState.HEAT
+                maxValue: Characteristic.TargetHeatingCoolingState.HEAT,
+                validValues: [Characteristic.TargetHeatingCoolingState.OFF, Characteristic.TargetHeatingCoolingState.HEAT]
             })
   
         this.heater
