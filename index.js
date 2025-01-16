@@ -1,7 +1,5 @@
 "use strict";
 let Service, Characteristic
-const fetch = require('node-fetch')
-
 
 module.exports = function (homebridge) {
     Service = homebridge.hap.Service;
