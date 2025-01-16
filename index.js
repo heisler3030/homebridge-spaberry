@@ -1,7 +1,9 @@
 "use strict";
 let Service, Characteristic
 const fetch = require('node-fetch')
-
+const PUMP_ONE = '[1]' // Command to toggle pump 1
+const PUMP_TWO = '[2]' // Command to toggle pump 2
+//const LIGHT = '[???]' // Command to toggle light
 
 module.exports = function (homebridge) {
     Service = homebridge.hap.Service;
@@ -34,7 +36,7 @@ spacontrol.prototype = {
         this.infoService = new Service.AccessoryInformation()
         this.infoService
             .setCharacteristic(Characteristic.Manufacturer, 'SuperFly, Inc.')
-            .setCharacteristic(Characteristic. Model, 'Balboa 9800CP')
+            .setCharacteristic(Characteristic.Model, 'Balboa 9800CP')
 
         this.heater = new Service.Thermostat(this.config.name)
         this.heater.setCharacteristic(Characteristic.TemperatureDisplayUnits, Characteristic.TemperatureDisplayUnits.FAHRENHEIT);
@@ -46,6 +48,7 @@ spacontrol.prototype = {
                 maxValue: Characteristic.TargetHeatingCoolingState.HEAT,
                 validValues: [Characteristic.TargetHeatingCoolingState.OFF, Characteristic.TargetHeatingCoolingState.HEAT]
             })
+            .on('get', this._getSpaStatus.bind(this))
   
         this.heater
             .getCharacteristic(Characteristic.TargetTemperature)
@@ -54,7 +57,25 @@ spacontrol.prototype = {
                 minValue: _toCelsius(80),
                 maxValue: _toCelsius(104)
             })
+            .on('get', this._getSpaStatus.bind(this))
 
+        this.pumpOne = new Service.Fan('Pump 1', 'pumpSwitchOne')
+        this.pumpOne
+            .setCharacteristic(Characteristic.Name, 'Pump 1')
+            .getCharacteristic(Characteristic.On)
+            .onSet(this.setJets.bind(this));
+
+        this.pumpTwo = new Service.Fan('Pump 2', 'pumpSwitchTwo')
+            this.pumpTwo
+                .setCharacteristic(Characteristic.Name, 'Pump 2')
+                .getCharacteristic(Characteristic.On)
+                .onSet(this.setJets.bind(this));
+
+        this.light = new Service.Lightbulb('Light', 'lightSwitch')        
+        this.light
+            .setCharacteristic(Characteristic.Name, 'Spa Light')
+            .getCharacteristic(Characteristic.On)
+            .onSet(this.setLight.bind(this));
 
         this._getSpaStatus(function () {})
 
@@ -62,7 +83,7 @@ spacontrol.prototype = {
             this._getSpaStatus(function () {})
         }.bind(this), this.config.pollInterval * 1000)
 
-        return [this.infoService, this.heater];
+        return [this.infoService, this.heater, this.pumpOne, this.pumpTwo, this.light]
     },
 
     _getSpaStatus: function(callback) {
@@ -78,7 +99,10 @@ spacontrol.prototype = {
             this.heater.getCharacteristic(Characteristic.TargetTemperature).updateValue(_toCelsius(status.setTemp))
             this.heater.getCharacteristic(Characteristic.CurrentHeatingCoolingState).updateValue(status.mode)  // 1 = HEAT, 0 = OFF
             this.heater.getCharacteristic(Characteristic.TargetHeatingCoolingState).updateValue(status.mode)
-            callback()
+            this.pumpOne.getCharacteristic(Characteristic.On).updateValue(status.jets)
+            this.pumpTwo.getCharacteristic(Characteristic.On).updateValue(status.jets)
+            this.light.getCharacteristic(Characteristic.On).updateValue(status.light)
+            callback(null)
         })
         .catch(e => this.log.error(`Error in _getSpaStatus: ${e}`))
     },
@@ -106,6 +130,42 @@ spacontrol.prototype = {
             this._getSpaStatus(function () {})
         })
         .catch(e => this.log.error(`Error in setTargetTemperature: ${e}`))
+    },
+
+    setPumpOne: function (value, callback) {
+        this.log.info(`setPumpOne: ${value}`)
+        //this.log.info(`${this.config.url}/command?commands=${JETS}`)
+        fetch(`${this.config.url}/command?commands=${PUMP_ONE}`)
+        .then(res => {
+            this.pumpOne.getCharacteristic(Characteristic.On).updateValue(value)
+            callback(null)
+            this._getSpaStatus(function () {})
+        })
+        .catch(e => this.log.error(`Error in pumpOne: ${e}`))
+    },
+
+    setPumpTwo: function (value, callback) {
+        this.log.info(`setPumpTwo: ${value}`)
+        //this.log.info(`${this.config.url}/command?commands=${JETS}`)
+        fetch(`${this.config.url}/command?commands=${PUMP_TWO}`)
+        .then(res => {
+            this.pumpTwo.getCharacteristic(Characteristic.On).updateValue(value)
+            callback(null)
+            this._getSpaStatus(function () {})
+        })
+        .catch(e => this.log.error(`Error in pumpTwo: ${e}`))
+    },
+
+    setLight: function (value, callback) {
+        this.log.info(`setLight: ${value}`)
+        //this.log.info(`${this.config.url}/command?commands=${LIGHT}`)
+        fetch(`${this.config.url}/command?commands=${LIGHT}`)
+        .then(res => {
+            this.light.getCharacteristic(Characteristic.On).updateValue(value)
+            callback(null)
+            this._getSpaStatus(function () {})
+        })
+        .catch(e => this.log.error(`Error in setLight: ${e}`))
     }
 
 }
